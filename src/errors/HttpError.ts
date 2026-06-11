@@ -26,6 +26,9 @@ export const unauthorized = (
 export const notFound = (resource: string): HttpError =>
   new HttpError(404, 'not_found', `${resource} not found`);
 
+export const forbidden = (message = 'Forbidden'): HttpError =>
+  new HttpError(403, 'forbidden', message);
+
 export const conflict = (message = 'Conflict'): HttpError =>
   new HttpError(409, 'conflict', message);
 

@@ -15,6 +15,7 @@ const URL_MAX = 2_000;
 
 export const brigadeCreateSchema = z
   .object({
+    slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/, 'kebab-case').optional(),
     name: z.string().trim().min(1).max(NAME_MAX),
     description: z.string().trim().max(TEXT_LONG).optional(),
     presentation: z.string().trim().max(TEXT_LONG).optional(),
@@ -31,7 +32,7 @@ export const brigadeCreateSchema = z
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     image_url: z.string().trim().url().max(URL_MAX).optional(),
-    brigade_id: z.string().trim().max(64).optional(),
+    external_code: z.string().trim().max(64).optional(),
   })
   .strict();
 

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { mapSupabaseError } from '../utils/supabaseError.js';
+import { mapSupabaseError, escapeIlike } from '../utils/supabaseError.js';
 import { notFound } from '../errors/HttpError.js';
 import type { CampaignCreate, CampaignListQuery, CampaignUpdate } from '../schemas/campaign.js';
 import type { CampaignRow } from '../types/domain.js';
@@ -13,7 +13,7 @@ export const listCampaigns = async (q: CampaignListQuery): Promise<ListResult<Ca
     .order('created_at', { ascending: false })
     .range(q.offset, q.offset + q.limit - 1);
 
-  if (q.category) query = query.eq('category', q.category);
+  if (q.search) query = query.ilike('title', `%${escapeIlike(q.search)}%`);
 
   const { data, error, count } = await query;
   if (error) throw mapSupabaseError(error, 'Campaign');

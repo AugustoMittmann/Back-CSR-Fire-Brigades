@@ -20,6 +20,7 @@ import type { BrigadeRow } from '../types/domain.js';
 
 interface BrigadeApi {
   id: string;
+  slug: string | null;
   name: string;
   description: string | null;
   presentation: string | null;
@@ -36,13 +37,14 @@ interface BrigadeApi {
   latitude: number | null;
   longitude: number | null;
   imageUrl: string | null;
-  brigadeId: string | null;
+  externalCode: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 const toApi = (r: BrigadeRow): BrigadeApi => ({
   id: r.id,
+  slug: r.slug,
   name: r.name,
   description: r.description,
   presentation: r.presentation,
@@ -59,7 +61,7 @@ const toApi = (r: BrigadeRow): BrigadeApi => ({
   latitude: r.latitude,
   longitude: r.longitude,
   imageUrl: r.image_url,
-  brigadeId: r.brigade_id,
+  externalCode: r.external_code,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });

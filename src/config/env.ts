@@ -10,10 +10,6 @@ import { z } from 'zod';
 // JWT shape sanity check — service role keys are JWTs (header.payload.signature).
 const jwtLike = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
-// Auth0 tenant domains: anything ending in .auth0.com (region-prefixed or not),
-// or a custom domain. We accept any hostname-like string with at least one dot.
-const hostLike = /^(?!-)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
-
 // Note: NOT .strict() — process.env always contains many unrelated keys
 // (PATH, HOME, etc.). We only validate the keys we care about.
 const Schema = z.object({
@@ -30,9 +26,11 @@ const Schema = z.object({
       .string()
       .min(20, 'SUPABASE_SERVICE_ROLE_KEY looks too short')
       .regex(jwtLike, 'SUPABASE_SERVICE_ROLE_KEY must be a JWT'),
-
-    AUTH0_DOMAIN: z.string().regex(hostLike, 'AUTH0_DOMAIN must be a hostname'),
-    AUTH0_AUDIENCE: z.string().min(1),
+    // HS256 secret used to verify Supabase Auth JWTs sent by the frontend.
+    // Found in: Supabase Dashboard → Project Settings → API → JWT Secret.
+    SUPABASE_JWT_SECRET: z
+      .string()
+      .min(20, 'SUPABASE_JWT_SECRET looks too short'),
 
     FRONTEND_ORIGIN_DEV: z.string().url().optional(),
     FRONTEND_ORIGIN_PROD: z.string().url().optional(),

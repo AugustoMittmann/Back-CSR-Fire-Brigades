@@ -1,26 +1,16 @@
 import { z } from 'zod';
 import { listQueryBase } from './common.js';
 
-export const CAMPAIGN_CATEGORIES = [
-  'Campanha',
-  'Boas Práticas',
-  'Artigo',
-  'Notícia',
-] as const;
-
 export const campaignCreateSchema = z
   .object({
+    slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9-]+$/, 'kebab-case').optional(),
     title: z.string().trim().min(1).max(200),
     description: z.string().trim().max(2_000).optional(),
     body: z.string().trim().max(40_000).optional(),
-    category: z.enum(CAMPAIGN_CATEGORIES).optional(),
-    category_color: z
-      .string()
-      .trim()
-      .regex(/^#[0-9a-fA-F]{3,8}$/, 'Expected hex color')
-      .max(9)
-      .optional(),
+    pix: z.string().trim().max(120).optional(),
     image_url: z.string().trim().url().max(2_000).optional(),
+    start_date: z.string().datetime({ offset: true }).optional(),
+    end_date: z.string().datetime({ offset: true }).optional(),
     published_at: z.string().datetime({ offset: true }).optional(),
   })
   .strict();
@@ -28,7 +18,7 @@ export const campaignCreateSchema = z
 export const campaignUpdateSchema = campaignCreateSchema.partial();
 
 export const campaignListQuerySchema = listQueryBase.extend({
-  category: z.enum(CAMPAIGN_CATEGORIES).optional(),
+  search: z.string().trim().max(100).optional(),
 });
 
 export type CampaignCreate = z.infer<typeof campaignCreateSchema>;

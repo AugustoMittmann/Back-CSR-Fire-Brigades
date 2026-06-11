@@ -1,52 +1,40 @@
 import type { Request, Response } from 'express';
 import {
-  campaignCreateSchema,
-  campaignListQuerySchema,
-  campaignUpdateSchema,
-} from '../schemas/campaign.js';
+  participantBrigadeCreateSchema,
+  participantBrigadeListQuerySchema,
+  participantBrigadeUpdateSchema,
+} from '../schemas/participantBrigade.js';
 import { uuidSchema } from '../schemas/common.js';
 import {
-  createCampaign,
-  deleteCampaign,
-  getCampaign,
-  listCampaigns,
-  updateCampaign,
-} from '../db/campaigns.js';
-import type { CampaignRow } from '../types/domain.js';
+  createParticipantBrigade,
+  deleteParticipantBrigade,
+  getParticipantBrigade,
+  listParticipantBrigades,
+  updateParticipantBrigade,
+} from '../db/participantBrigades.js';
+import type { ParticipantBrigadeRow } from '../types/domain.js';
 
-interface CampaignApi {
+interface ParticipantBrigadeApi {
   id: string;
-  slug: string | null;
-  title: string;
-  description: string | null;
-  body: string | null;
-  pix: string | null;
+  name: string;
   imageUrl: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  publishedAt: string | null;
+  brigadeId: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-const toApi = (r: CampaignRow): CampaignApi => ({
+const toApi = (r: ParticipantBrigadeRow): ParticipantBrigadeApi => ({
   id: r.id,
-  slug: r.slug,
-  title: r.title,
-  description: r.description,
-  body: r.body,
-  pix: r.pix,
+  name: r.name,
   imageUrl: r.image_url,
-  startDate: r.start_date,
-  endDate: r.end_date,
-  publishedAt: r.published_at,
+  brigadeId: r.brigade_id,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
 
 export const list = async (req: Request, res: Response): Promise<void> => {
-  const q = campaignListQuerySchema.parse(req.query);
-  const { data, count } = await listCampaigns(q);
+  const q = participantBrigadeListQuerySchema.parse(req.query);
+  const { data, count } = await listParticipantBrigades(q);
   res.json({
     data: data.map(toApi),
     limit: q.limit,
@@ -57,25 +45,25 @@ export const list = async (req: Request, res: Response): Promise<void> => {
 
 export const get = async (req: Request, res: Response): Promise<void> => {
   const id = uuidSchema.parse(req.params.id);
-  const row = await getCampaign(id);
+  const row = await getParticipantBrigade(id);
   res.json({ data: toApi(row) });
 };
 
 export const create = async (req: Request, res: Response): Promise<void> => {
-  const body = campaignCreateSchema.parse(req.body);
-  const row = await createCampaign(body);
+  const body = participantBrigadeCreateSchema.parse(req.body);
+  const row = await createParticipantBrigade(body);
   res.status(201).json({ data: toApi(row) });
 };
 
 export const update = async (req: Request, res: Response): Promise<void> => {
   const id = uuidSchema.parse(req.params.id);
-  const patch = campaignUpdateSchema.parse(req.body);
-  const row = await updateCampaign(id, patch);
+  const patch = participantBrigadeUpdateSchema.parse(req.body);
+  const row = await updateParticipantBrigade(id, patch);
   res.json({ data: toApi(row) });
 };
 
 export const remove = async (req: Request, res: Response): Promise<void> => {
   const id = uuidSchema.parse(req.params.id);
-  await deleteCampaign(id);
+  await deleteParticipantBrigade(id);
   res.status(204).send();
 };
