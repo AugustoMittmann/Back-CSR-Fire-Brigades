@@ -6,8 +6,14 @@
  * frontend.
  *
  * Lazy init keeps module import order safe — env validation runs first.
+ *
+ * Why we pass `realtime.transport`: Node 20 has no native WebSocket, and the
+ * Supabase JS client tries to construct a Realtime client even when we never
+ * subscribe to channels. Without a transport it throws on the first request.
+ * The `ws` package provides the constructor; we never actually subscribe.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
@@ -24,6 +30,12 @@ export const supabase = (): SupabaseClient => {
         // refresh. The default true causes spurious warnings.
         persistSession: false,
         autoRefreshToken: false,
+      },
+      realtime: {
+        // Provide a WebSocket constructor so the client doesn't crash on
+        // construction. Cast: realtime-js types `WebSocketLikeConstructor`,
+        // and `ws` is API-compatible at runtime.
+        transport: WebSocket as unknown as typeof globalThis.WebSocket,
       },
     });
   }
