@@ -56,11 +56,6 @@ if (!parsed.success) {
 export const env = parsed.data;
 export type Env = typeof env;
 
-// Convenience: list of allowed CORS origins (deduped, falsy filtered).
-export const allowedOrigins: string[] = Array.from(
-  new Set([env.FRONTEND_ORIGIN_DEV, env.FRONTEND_ORIGIN_PROD].filter(Boolean) as string[]),
-);
-
 // trust proxy can be a number or a string (e.g. "loopback"). Coerce to number
 // when possible so app.set('trust proxy', N) gets the right type.
 export const trustProxy: number | string = (() => {
@@ -68,3 +63,83 @@ export const trustProxy: number | string = (() => {
   const n = Number(v);
   return Number.isFinite(n) ? n : v;
 })();
+
+/**
+ * Convenience: list of allowed CORS origins. Each configured value is
+ * normalized to its scheme+host+port via `new URL(v).origin`, which strips any
+ * path/trailing slash — a browser's `Origin` header never includes a path, so
+ * a configured "https://app.example.com/home" would otherwise never match.
+ */
+export const allowedOrigins: string[] = (() => {
+  const configured = [env.FRONTEND_ORIGIN_DEV, env.FRONTEND_ORIGIN_PROD].filter(
+    Boolean,
+  ) as string[];
+  const normalized: string[] = [];
+  for (const value of configured) {
+    try {
+      normalized.push(new URL(value).origin);
+    } catch {
+      // Should be unreachable — zod already validated .url() — but never let a
+      // malformed origin silently widen or crash the allowlist.
+      // eslint-disable-next-line no-console
+      console.warn(`[env] Ignoring malformed FRONTEND_ORIGIN value: ${value}`);
+    }
+  }
+  return Array.from(new Set(normalized));
+})();
+
+// ---------------------------------------------------------------------------
+// Boot-time posture checks. These run once at import. In production we fail
+// fast on misconfiguration that would otherwise fail silently or insecurely;
+// in dev we only warn so local iteration isn't blocked.
+// ---------------------------------------------------------------------------
+
+/** Decode a JWT's payload `role` claim without verifying the signature. */
+const jwtRoleClaim = (token: string): string | null => {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const json = Buffer.from(payload, 'base64url').toString('utf8');
+    return (JSON.parse(json) as { role?: string }).role ?? null;
+  } catch {
+    return null;
+  }
+};
+
+{
+  const isProd = env.NODE_ENV === 'production';
+
+  // The service-role key must actually carry role='service_role'. An anon key
+  // in this slot passes the JWT shape check but silently loses server
+  // privileges — dangerous with RLS disabled.
+  const serviceRole = jwtRoleClaim(env.SUPABASE_SERVICE_ROLE_KEY);
+  if (serviceRole !== 'service_role') {
+    const msg = `[env] SUPABASE_SERVICE_ROLE_KEY carries role='${serviceRole ?? 'unknown'}', expected 'service_role'.`;
+    if (isProd) {
+      // eslint-disable-next-line no-console
+      console.error(msg);
+      process.exit(1);
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn(msg);
+    }
+  }
+
+  // A production deploy with no prod origin yields an empty CORS allowlist,
+  // silently 403-ing every browser request.
+  if (isProd && !env.FRONTEND_ORIGIN_PROD) {
+    // eslint-disable-next-line no-console
+    console.error('[env] FRONTEND_ORIGIN_PROD is required when NODE_ENV=production.');
+    process.exit(1);
+  }
+
+  // Behind a reverse proxy/LB (typical in production), trust proxy = 0 makes
+  // express-rate-limit key on the proxy IP, collapsing all clients into one
+  // bucket. Warn loudly rather than exit (some deploys terminate TLS directly).
+  if (isProd && trustProxy === 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[env] TRUST_PROXY=0 in production: rate limiting keys on the proxy IP, not the client. Set TRUST_PROXY to the number of proxy hops (e.g. 1).',
+    );
+  }
+}

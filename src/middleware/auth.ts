@@ -5,6 +5,7 @@
  * - Pins algorithms to HS256 — defends against alg-confusion attacks where
  *   an attacker tries to swap RS256 for HS256 with the public key.
  * - Validates issuer matches the project's auth endpoint.
+ * - Validates audience is 'authenticated' (Supabase user access tokens).
  * - 5-second clock tolerance for benign drift.
  * - Returns a generic 401 to the client on any failure — the actual reason
  *   is logged server-side, never leaked.
@@ -31,6 +32,9 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
     {
       algorithms: ['HS256'],
       issuer,
+      // Supabase user access tokens carry aud='authenticated'. Pinning it
+      // rejects any other token type signed with the same project secret.
+      audience: 'authenticated',
       clockTolerance: 5,
     },
     (err: VerifyErrors | null, decoded) => {

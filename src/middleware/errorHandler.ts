@@ -26,7 +26,8 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   // string by virtue of the requestId middleware running first.
   const requestId = String(req.id);
 
-  // CORS preflight rejections come through as plain Errors with our message.
+  // CORS rejections (both preflight and actual cross-origin requests) come
+  // through as plain Errors with our message.
   if (err instanceof Error && err.message === 'Not allowed by CORS') {
     res.status(403).json({
       error: { message: 'Origin not allowed', code: 'cors_denied', requestId },

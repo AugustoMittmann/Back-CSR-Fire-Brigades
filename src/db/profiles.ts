@@ -14,7 +14,6 @@ export const listProfiles = async (
     .order('created_at', { ascending: false })
     .range(q.offset, q.offset + q.limit - 1);
 
-  if (q.role) query = query.eq('role', q.role);
   if (q.is_validated !== undefined) query = query.eq('is_validated', q.is_validated);
   if (q.search) query = query.ilike('email', `%${escapeIlike(q.search)}%`);
 
@@ -35,7 +34,7 @@ export const getProfile = async (id: string): Promise<ProfileRow> => {
 };
 
 /**
- * Generic patch (display_name, role, is_validated). Validation marks
+ * Generic patch (display_name, is_validated). Validation marks
  * (validated_by/validated_at) live on validateProfile so the admin's identity
  * is recorded explicitly.
  */

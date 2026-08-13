@@ -1,7 +1,7 @@
 /**
  * Augments the Express Request with our per-request context:
- *  - id     a UUID set by requestId middleware; echoed in `X-Request-Id`
- *  - auth   the decoded JWT payload after `requireAuth` succeeds
+ *  - id       a UUID set by requestId middleware; echoed in `X-Request-Id`
+ *  - auth     the decoded JWT payload after `requireAuth` succeeds
  *
  * Loaded automatically by the `include: ["src/**\/*"]` glob in tsconfig.
  */

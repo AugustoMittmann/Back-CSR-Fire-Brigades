@@ -149,7 +149,6 @@ export interface ProfileRow {
   id: string;
   email: string;
   display_name: string | null;
-  role: 'user' | 'admin' | 'super_admin';
   is_validated: boolean;
   validated_by: string | null;
   validated_at: string | null;

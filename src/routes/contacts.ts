@@ -10,6 +10,7 @@ export const contactsRouter = (): Router => {
   // body parsing in middleware order — express-rate-limit happens after the
   // global json parser already loaded, but it still gates the controller.
   r.post('/', contactLimiter, asyncHandler(contacts.create));
+  // Authenticated-only: the list returns submitter PII (name/email/phone/message).
   r.get('/', requireAuth, asyncHandler(contacts.list));
   return r;
 };

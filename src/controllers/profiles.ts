@@ -12,7 +12,6 @@ import {
   validateProfile,
 } from '../db/profiles.js';
 import { supabase } from '../db/supabase.js';
-import { mapSupabaseError } from '../utils/supabaseError.js';
 import { badRequest, unauthorized } from '../errors/HttpError.js';
 import type { ProfileRow } from '../types/domain.js';
 
@@ -20,7 +19,6 @@ interface ProfileApi {
   id: string;
   email: string;
   displayName: string | null;
-  role: 'user' | 'admin' | 'super_admin';
   isValidated: boolean;
   validatedBy: string | null;
   validatedAt: string | null;
@@ -32,7 +30,6 @@ const toApi = (r: ProfileRow): ProfileApi => ({
   id: r.id,
   email: r.email,
   displayName: r.display_name,
-  role: r.role,
   isValidated: r.is_validated,
   validatedBy: r.validated_by,
   validatedAt: r.validated_at,
@@ -89,9 +86,9 @@ export const revoke = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Admin-only: provisiona um novo usuário via Supabase Auth Admin API.
+ * Provisiona um novo usuário via Supabase Auth Admin API.
  * O trigger handle_new_user cria a row em profiles automaticamente; em seguida
- * aplicamos role/display_name e marcamos is_validated=true (admins criados
+ * aplicamos display_name e marcamos is_validated=true (usuários criados
  * manualmente são pré-validados).
  */
 export const createUser = async (req: Request, res: Response): Promise<void> => {
@@ -110,10 +107,9 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
   }
   if (!data.user) throw badRequest('signup_failed', 'Auth API returned no user');
 
-  // Aplica role + display_name + is_validated. validateProfile registra
-  // validated_by/validated_at; updateProfile cuida do resto.
+  // Aplica display_name e marca validado. validateProfile registra
+  // validated_by/validated_at; updateProfile cuida do display_name.
   await updateProfile(data.user.id, {
-    role: body.role ?? 'user',
     display_name: body.display_name,
   });
   const row = await validateProfile(data.user.id, validatorId);

@@ -5,10 +5,11 @@
  *   2. helmet                 → security headers on every response
  *   3. requestId              → req.id available for all subsequent logs
  *   4. pino-http              → structured request logs (with redaction)
- *   5. cors                   → preflight handled before any auth
- *   6. express.json (10kb)    → small payload limit defends contact endpoint
- *   7. apiLimiter             → global, after IP is trustworthy
- *   8. /health, /ready        → unauthenticated, no rate-limit surprises
+ *   5. /health, /ready        → BEFORE cors + rate limit so probes (which send
+ *                               no Origin header) aren't 403'd or throttled
+ *   6. cors                   → preflight handled before any auth
+ *   7. express.json (10kb)    → small payload limit defends contact endpoint
+ *   8. apiLimiter             → global, after IP is trustworthy
  *   9. /api routes
  *  10. notFound               → catches unmatched
  *  11. errorHandler           → MUST be last (Express 4 four-arg middleware)
@@ -57,6 +58,24 @@ export const buildApp = (): Express => {
     }),
   );
 
+  // Health/readiness are mounted BEFORE cors and the rate limiter: orchestrator
+  // probes send no Origin header (which cors rejects in production) and should
+  // never be throttled.
+  //
+  // Liveness — no DB, no auth, no rate limit surprises.
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  // Readiness — pings Supabase. Returns 503 if DB unreachable.
+  app.get(
+    '/ready',
+    asyncHandler(async (_req, res) => {
+      const ok = await supabasePing();
+      res.status(ok ? 200 : 503).json({ status: ok ? 'ready' : 'unavailable' });
+    }),
+  );
+
   app.use(
     cors({
       origin: (origin, cb) => {
@@ -80,20 +99,6 @@ export const buildApp = (): Express => {
   app.use(express.json({ limit: '10kb' }));
 
   app.use(apiLimiter);
-
-  // Liveness — no DB, no auth, no rate limit surprises.
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok' });
-  });
-
-  // Readiness — pings Supabase. Returns 503 if DB unreachable.
-  app.get(
-    '/ready',
-    asyncHandler(async (_req, res) => {
-      const ok = await supabasePing();
-      res.status(ok ? 200 : 503).json({ status: ok ? 'ready' : 'unavailable' });
-    }),
-  );
 
   app.use('/api', apiRouter());
 
