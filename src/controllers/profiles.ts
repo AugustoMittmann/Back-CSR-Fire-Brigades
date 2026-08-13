@@ -12,15 +12,13 @@ import {
   validateProfile,
 } from '../db/profiles.js';
 import { supabase } from '../db/supabase.js';
-import { mapSupabaseError } from '../utils/supabaseError.js';
-import { badRequest, forbidden, unauthorized } from '../errors/HttpError.js';
+import { badRequest, unauthorized } from '../errors/HttpError.js';
 import type { ProfileRow } from '../types/domain.js';
 
 interface ProfileApi {
   id: string;
   email: string;
   displayName: string | null;
-  role: 'user' | 'admin' | 'super_admin';
   isValidated: boolean;
   validatedBy: string | null;
   validatedAt: string | null;
@@ -32,7 +30,6 @@ const toApi = (r: ProfileRow): ProfileApi => ({
   id: r.id,
   email: r.email,
   displayName: r.display_name,
-  role: r.role,
   isValidated: r.is_validated,
   validatedBy: r.validated_by,
   validatedAt: r.validated_at,
@@ -70,20 +67,6 @@ export const get = async (req: Request, res: Response): Promise<void> => {
 export const update = async (req: Request, res: Response): Promise<void> => {
   const id = String(req.params.id ?? '').slice(0, 255);
   const patch = profileUpdateSchema.parse(req.body);
-
-  // Privilege-management guard: role and validation status may only be changed
-  // by a super_admin, and never by a caller against their own account (blocks
-  // self-escalation). display_name edits remain open to any admin.
-  const touchesPrivilege = patch.role !== undefined || patch.is_validated !== undefined;
-  if (touchesPrivilege) {
-    if (req.profile?.role !== 'super_admin') {
-      throw forbidden('Only a super admin may change role or validation status');
-    }
-    if (id === req.auth?.sub) {
-      throw forbidden('You cannot change your own role or validation status');
-    }
-  }
-
   const row = await updateProfile(id, patch);
   res.json({ data: toApi(row) });
 };
@@ -103,22 +86,15 @@ export const revoke = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Admin-only: provisiona um novo usuário via Supabase Auth Admin API.
+ * Provisiona um novo usuário via Supabase Auth Admin API.
  * O trigger handle_new_user cria a row em profiles automaticamente; em seguida
- * aplicamos role/display_name e marcamos is_validated=true (admins criados
+ * aplicamos display_name e marcamos is_validated=true (usuários criados
  * manualmente são pré-validados).
  */
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   const body = profileCreateSchema.parse(req.body);
   const validatorId = req.auth?.sub;
   if (!validatorId) throw unauthorized('missing_token', 'Unauthorized');
-
-  // Only a super_admin may provision a privileged account; a plain admin can
-  // create ordinary users but not mint fellow admins/super_admins.
-  const requestedRole = body.role ?? 'user';
-  if (requestedRole !== 'user' && req.profile?.role !== 'super_admin') {
-    throw forbidden('Only a super admin may create an admin account');
-  }
 
   const { data, error } = await supabase().auth.admin.createUser({
     email: body.email,
@@ -131,10 +107,9 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
   }
   if (!data.user) throw badRequest('signup_failed', 'Auth API returned no user');
 
-  // Aplica role + display_name + is_validated. validateProfile registra
-  // validated_by/validated_at; updateProfile cuida do resto.
+  // Aplica display_name e marca validado. validateProfile registra
+  // validated_by/validated_at; updateProfile cuida do display_name.
   await updateProfile(data.user.id, {
-    role: requestedRole,
     display_name: body.display_name,
   });
   const row = await validateProfile(data.user.id, validatorId);

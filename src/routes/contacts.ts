@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import * as contacts from '../controllers/contacts.js';
 import { requireAuth } from '../middleware/auth.js';
-import { requireAdmin } from '../middleware/requireAdmin.js';
 import { contactLimiter } from '../middleware/rateLimit.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -11,7 +10,7 @@ export const contactsRouter = (): Router => {
   // body parsing in middleware order — express-rate-limit happens after the
   // global json parser already loaded, but it still gates the controller.
   r.post('/', contactLimiter, asyncHandler(contacts.create));
-  // Admin-only: the list returns submitter PII (name/email/phone/message).
-  r.get('/', requireAuth, requireAdmin, asyncHandler(contacts.list));
+  // Authenticated-only: the list returns submitter PII (name/email/phone/message).
+  r.get('/', requireAuth, asyncHandler(contacts.list));
   return r;
 };
