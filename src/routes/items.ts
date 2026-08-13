@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as items from '../controllers/items.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 /**
@@ -12,9 +13,9 @@ export const itemsRouter = (): Router => {
   const r = Router();
   r.get('/', asyncHandler(items.list));
   r.get('/:id', asyncHandler(items.get));
-  r.post('/', requireAuth, asyncHandler(items.create));
-  r.put('/:id', requireAuth, asyncHandler(items.update));
-  r.delete('/:id', requireAuth, asyncHandler(items.remove));
+  r.post('/', requireAuth, requireAdmin, asyncHandler(items.create));
+  r.put('/:id', requireAuth, requireAdmin, asyncHandler(items.update));
+  r.delete('/:id', requireAuth, requireAdmin, asyncHandler(items.remove));
   return r;
 };
 
@@ -22,7 +23,7 @@ export const itemsRouter = (): Router => {
 export const brigadeItemsRouter = (): Router => {
   const r = Router({ mergeParams: true });
   r.get('/', asyncHandler(items.listForBrigade));
-  r.put('/:itemId', requireAuth, asyncHandler(items.upsertForBrigade));
-  r.delete('/:itemId', requireAuth, asyncHandler(items.removeForBrigade));
+  r.put('/:itemId', requireAuth, requireAdmin, asyncHandler(items.upsertForBrigade));
+  r.delete('/:itemId', requireAuth, requireAdmin, asyncHandler(items.removeForBrigade));
   return r;
 };

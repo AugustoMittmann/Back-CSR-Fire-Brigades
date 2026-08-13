@@ -13,7 +13,7 @@ import {
 } from '../db/profiles.js';
 import { supabase } from '../db/supabase.js';
 import { mapSupabaseError } from '../utils/supabaseError.js';
-import { badRequest, unauthorized } from '../errors/HttpError.js';
+import { badRequest, forbidden, unauthorized } from '../errors/HttpError.js';
 import type { ProfileRow } from '../types/domain.js';
 
 interface ProfileApi {
@@ -70,6 +70,20 @@ export const get = async (req: Request, res: Response): Promise<void> => {
 export const update = async (req: Request, res: Response): Promise<void> => {
   const id = String(req.params.id ?? '').slice(0, 255);
   const patch = profileUpdateSchema.parse(req.body);
+
+  // Privilege-management guard: role and validation status may only be changed
+  // by a super_admin, and never by a caller against their own account (blocks
+  // self-escalation). display_name edits remain open to any admin.
+  const touchesPrivilege = patch.role !== undefined || patch.is_validated !== undefined;
+  if (touchesPrivilege) {
+    if (req.profile?.role !== 'super_admin') {
+      throw forbidden('Only a super admin may change role or validation status');
+    }
+    if (id === req.auth?.sub) {
+      throw forbidden('You cannot change your own role or validation status');
+    }
+  }
+
   const row = await updateProfile(id, patch);
   res.json({ data: toApi(row) });
 };
@@ -99,6 +113,13 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
   const validatorId = req.auth?.sub;
   if (!validatorId) throw unauthorized('missing_token', 'Unauthorized');
 
+  // Only a super_admin may provision a privileged account; a plain admin can
+  // create ordinary users but not mint fellow admins/super_admins.
+  const requestedRole = body.role ?? 'user';
+  if (requestedRole !== 'user' && req.profile?.role !== 'super_admin') {
+    throw forbidden('Only a super admin may create an admin account');
+  }
+
   const { data, error } = await supabase().auth.admin.createUser({
     email: body.email,
     password: body.password,
@@ -113,7 +134,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
   // Aplica role + display_name + is_validated. validateProfile registra
   // validated_by/validated_at; updateProfile cuida do resto.
   await updateProfile(data.user.id, {
-    role: body.role ?? 'user',
+    role: requestedRole,
     display_name: body.display_name,
   });
   const row = await validateProfile(data.user.id, validatorId);
