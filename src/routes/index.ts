@@ -10,6 +10,7 @@ import { faqsRouter } from './faqs.js';
 import { brigadeItemsRouter, itemsRouter } from './items.js';
 import { newsRouter } from './news.js';
 import { participantBrigadesRouter } from './participantBrigades.js';
+import { publicationBrigadesRouter } from './publicationBrigades.js';
 import { profilesRouter } from './profiles.js';
 import { statsRouter } from './stats.js';
 
@@ -22,13 +23,21 @@ export const apiRouter = (): Router => {
   brigades.use('/:brigadeId/activities', brigadeActivitiesRouter());
   r.use('/brigades', brigades);
 
-  // Campaigns + nested results
+  // Campaigns + nested results / participating brigades
   const campaigns = campaignsRouter();
   campaigns.use('/:campaignId/results', campaignResultsRouter());
+  campaigns.use('/:campaignId/brigades', publicationBrigadesRouter('campaign', 'campaignId'));
   r.use('/campaigns', campaigns);
 
-  r.use('/news', newsRouter());
-  r.use('/articles', articlesRouter());
+  // News + nested participating brigades
+  const news = newsRouter();
+  news.use('/:newsId/brigades', publicationBrigadesRouter('news', 'newsId'));
+  r.use('/news', news);
+
+  // Articles + nested participating brigades
+  const articles = articlesRouter();
+  articles.use('/:articleId/brigades', publicationBrigadesRouter('article', 'articleId'));
+  r.use('/articles', articles);
   r.use('/items', itemsRouter());
   r.use('/activities', activitiesRouter());
   r.use('/participant-brigades', participantBrigadesRouter());
