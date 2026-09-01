@@ -1,0 +1,22 @@
+[
+  {
+    "item_id": 1,
+    "item": "Enxada",
+    "value": 130
+  },
+  {
+    "item_id": 2,
+    "item": "Kit de primeiros socorros",
+    "value": 150
+  },
+  {
+    "item_id": 3,
+    "item": "Kit de roupa iniciante",
+    "value": 300
+  },
+  {
+    "item_id": 4,
+    "item": "Carro",
+    "value": 120000
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "participant_id": 1,
+    "name": "Brigada Centro",
+    "image": null
+  },
+  {
+    "participant_id": 2,
+    "name": "Brigada Vila Rosa",
+    "image": null
+  },
+  {
+    "participant_id": 3,
+    "name": "Brigada Canudos",
+    "image": null
+  }
+]

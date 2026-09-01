@@ -1,0 +1,22 @@
+[
+  {
+    "brigade_id": 1,
+    "activity_id": 1
+  },
+  {
+    "brigade_id": 1,
+    "activity_id": 2
+  },
+  {
+    "brigade_id": 2,
+    "activity_id": 2
+  },
+  {
+    "brigade_id": 2,
+    "activity_id": 3
+  },
+  {
+    "brigade_id": 1,
+    "activity_id": 4
+  }
+]

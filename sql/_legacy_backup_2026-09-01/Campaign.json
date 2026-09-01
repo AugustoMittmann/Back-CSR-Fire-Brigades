@@ -1,0 +1,16 @@
+[
+  {
+    "campaign_id": 1,
+    "title": "Combate contra dengue",
+    "description": "Essa campanha tem como objetivo conscientizar a população de Novo Hamburgo contra a dengue",
+    "pix": "dengue@dengue.com",
+    "image": null
+  },
+  {
+    "campaign_id": 2,
+    "title": "Combate contra gripe aviária",
+    "description": "Essa campanha tem como objetivo conscientizar toda a área rural que possui aves com os cuidados necessários para evitar a proliferação da gripe aviária",
+    "pix": "aves@aves.com",
+    "image": null
+  }
+]

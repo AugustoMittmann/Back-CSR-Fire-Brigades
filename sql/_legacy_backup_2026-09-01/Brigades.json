@@ -1,0 +1,68 @@
+[
+  {
+    "brigade_id": 1,
+    "name": "Brigada da SAP",
+    "created_at": "2026-01-25T09:51:13",
+    "phone_number": 51999999999,
+    "email": "teste@sap.com",
+    "acting_area": "São Leopoldo",
+    "volunteers": 50,
+    "address": {
+      "city": "São Leopoldo",
+      "state": "RS",
+      "number": "123",
+      "street": "Avenida SAP",
+      "coord_x": "-29.796577",
+      "coord_y": "-51.150192",
+      "neighborhood": "Cristo Rei"
+    },
+    "pix": "chave_pix@teste.com",
+    "presentation": "A brigada da SAP atua em prevenções de acidentes dentro da SAP",
+    "instagram": "@brigada_da_sap",
+    "foundation": "2026-01-01"
+  },
+  {
+    "brigade_id": 2,
+    "name": "Brigada Vila Nova",
+    "created_at": "2026-01-25T12:55:28.582274",
+    "phone_number": 51998888776,
+    "email": "vilanova@vilanova.com",
+    "acting_area": "Bairro Vila Nova",
+    "volunteers": 10,
+    "address": {
+      "city": "Novo Hamburgo",
+      "state": "RS",
+      "number": "351",
+      "street": "Av. Victor Hugo Kunz",
+      "coord_x": "-29.676907",
+      "coord_y": "-51.118783",
+      "neighborhood": "Vila Nova"
+    },
+    "pix": "vilanova@vilanova.com",
+    "presentation": "A brigada Vila Nova protege o bairro vila nova de incendios",
+    "instagram": "@vila_nova_brigada",
+    "foundation": "2025-12-05"
+  },
+  {
+    "brigade_id": 3,
+    "name": "Brigada Alpha",
+    "created_at": "2026-01-27T19:08:51.075639",
+    "phone_number": 11999999999,
+    "email": "alpha@email.com",
+    "acting_area": "São Paulo",
+    "volunteers": 25,
+    "address": {
+      "city": "São Leopoldo",
+      "state": "RS",
+      "number": "123",
+      "street": "Avenida SAP",
+      "coord_x": "-29.796577",
+      "coord_y": "-51.150192",
+      "neighborhood": "Cristo Rei"
+    },
+    "pix": "123.456.789-00",
+    "presentation": "Brigada de apoio ambiental",
+    "instagram": "@brigadaalpha",
+    "foundation": "2020-05-10"
+  }
+]

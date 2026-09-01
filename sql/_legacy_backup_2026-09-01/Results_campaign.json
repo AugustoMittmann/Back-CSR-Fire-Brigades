@@ -1,0 +1,20 @@
+[
+  {
+    "campaign_id": 1,
+    "result_id": 1,
+    "result_1": "Dengue evitada",
+    "result_2": "10"
+  },
+  {
+    "campaign_id": 1,
+    "result_id": 2,
+    "result_1": "Pessoas infectadas",
+    "result_2": "0"
+  },
+  {
+    "campaign_id": 2,
+    "result_id": 3,
+    "result_1": "Criações afetadas",
+    "result_2": "35"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "post_id": 1,
+    "participant_id": 1
+  },
+  {
+    "post_id": 1,
+    "participant_id": 2
+  },
+  {
+    "post_id": 1,
+    "participant_id": 3
+  }
+]

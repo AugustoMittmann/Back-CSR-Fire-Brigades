@@ -1,0 +1,18 @@
+[
+  {
+    "activity_id": 1,
+    "activity": "Primeiros socorros"
+  },
+  {
+    "activity_id": 2,
+    "activity": "Combate à incendio"
+  },
+  {
+    "activity_id": 3,
+    "activity": "Resgate de animais"
+  },
+  {
+    "activity_id": 4,
+    "activity": "Simulado de incêndio"
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "brigade_id": 1,
+    "item_id": 1,
+    "value": null
+  },
+  {
+    "brigade_id": 1,
+    "item_id": 2,
+    "value": 20
+  },
+  {
+    "brigade_id": 2,
+    "item_id": 3,
+    "value": null
+  },
+  {
+    "brigade_id": 2,
+    "item_id": 4,
+    "value": 150000
+  }
+]
