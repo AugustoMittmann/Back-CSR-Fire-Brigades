@@ -43,6 +43,19 @@ const Schema = z.object({
     // match NEXT_PUBLIC_AUTH0_AUDIENCE on the frontend.
     AUTH0_AUDIENCE: z.string().min(1, 'AUTH0_AUDIENCE is required'),
 
+    // Auth0 — Management API (user CRUD for the admin "Gerenciar usuários"
+    // screen). A machine-to-machine app authorized on the Management API with
+    // read/create/update user scopes. Secret is server-only.
+    AUTH0_MGMT_CLIENT_ID: z.string().min(1, 'AUTH0_MGMT_CLIENT_ID is required'),
+    AUTH0_MGMT_CLIENT_SECRET: z
+      .string()
+      .min(1, 'AUTH0_MGMT_CLIENT_SECRET is required'),
+    // Management API audience, typically `${AUTH0_ISSUER_BASE_URL}api/v2/`.
+    AUTH0_MGMT_AUDIENCE: z.string().url(),
+    // Auth0 database connection new users are created in (must be enabled for
+    // the SPA so they can log in).
+    AUTH0_DB_CONNECTION: z.string().default('Username-Password-Authentication'),
+
     FRONTEND_ORIGIN_DEV: z.string().url().optional(),
     FRONTEND_ORIGIN_PROD: z.string().url().optional(),
 

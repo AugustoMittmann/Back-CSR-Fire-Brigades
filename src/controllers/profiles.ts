@@ -5,14 +5,14 @@ import {
   profileUpdateSchema,
 } from '../schemas/profile.js';
 import {
+  createUser as createAuth0User,
   getProfile,
   listProfiles,
   revokeProfile,
   updateProfile,
   validateProfile,
 } from '../db/profiles.js';
-import { supabase } from '../db/supabase.js';
-import { badRequest, unauthorized } from '../errors/HttpError.js';
+import { unauthorized } from '../errors/HttpError.js';
 import type { ProfileRow } from '../types/domain.js';
 
 interface ProfileApi {
@@ -86,32 +86,15 @@ export const revoke = async (req: Request, res: Response): Promise<void> => {
 };
 
 /**
- * Provisiona um novo usuário via Supabase Auth Admin API.
- * O trigger handle_new_user cria a row em profiles automaticamente; em seguida
- * aplicamos display_name e marcamos is_validated=true (usuários criados
- * manualmente são pré-validados).
+ * Provisiona um novo usuário no Auth0 (Management API). Usuários criados
+ * manualmente são pré-validados (is_validated=true), registrando o admin que
+ * criou em validated_by. O usuário passa a conseguir logar pela Universal Login.
  */
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   const body = profileCreateSchema.parse(req.body);
   const validatorId = req.auth?.sub;
   if (!validatorId) throw unauthorized('missing_token', 'Unauthorized');
 
-  const { data, error } = await supabase().auth.admin.createUser({
-    email: body.email,
-    password: body.password,
-    email_confirm: true,
-  });
-  if (error) {
-    // Erros típicos: email já em uso, senha fraca, etc. Repassamos como 400.
-    throw badRequest('signup_failed', error.message);
-  }
-  if (!data.user) throw badRequest('signup_failed', 'Auth API returned no user');
-
-  // Aplica display_name e marca validado. validateProfile registra
-  // validated_by/validated_at; updateProfile cuida do display_name.
-  await updateProfile(data.user.id, {
-    display_name: body.display_name,
-  });
-  const row = await validateProfile(data.user.id, validatorId);
+  const row = await createAuth0User(body, validatorId);
   res.status(201).json({ data: toApi(row) });
 };
