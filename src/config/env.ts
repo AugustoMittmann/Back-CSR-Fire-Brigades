@@ -26,11 +26,22 @@ const Schema = z.object({
       .string()
       .min(20, 'SUPABASE_SERVICE_ROLE_KEY looks too short')
       .regex(jwtLike, 'SUPABASE_SERVICE_ROLE_KEY must be a JWT'),
-    // HS256 secret used to verify Supabase Auth JWTs sent by the frontend.
-    // Found in: Supabase Dashboard → Project Settings → API → JWT Secret.
+    // Legacy: HS256 secret that used to verify Supabase Auth JWTs. API auth now
+    // uses Auth0 (see AUTH0_* below and middleware/auth.ts). Kept optional so
+    // existing deploys don't break; safe to drop once no longer referenced.
     SUPABASE_JWT_SECRET: z
       .string()
-      .min(20, 'SUPABASE_JWT_SECRET looks too short'),
+      .min(20, 'SUPABASE_JWT_SECRET looks too short')
+      .optional(),
+
+    // Auth0 — API auth. The frontend logs in via Auth0 and sends an RS256
+    // access token; requireAuth verifies it against the tenant JWKS.
+    // ISSUER must be the tenant URL WITH trailing slash (matches the token's
+    // `iss`), e.g. https://dev-xxxxx.us.auth0.com/
+    AUTH0_ISSUER_BASE_URL: z.string().url(),
+    // The API Identifier the access token is minted for (token `aud`). Must
+    // match NEXT_PUBLIC_AUTH0_AUDIENCE on the frontend.
+    AUTH0_AUDIENCE: z.string().min(1, 'AUTH0_AUDIENCE is required'),
 
     FRONTEND_ORIGIN_DEV: z.string().url().optional(),
     FRONTEND_ORIGIN_PROD: z.string().url().optional(),

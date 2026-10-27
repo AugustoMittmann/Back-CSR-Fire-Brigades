@@ -1,22 +1,32 @@
 /**
- * Supabase Auth JWT verification middleware (HS256).
+ * Auth0 access-token verification middleware (RS256 via JWKS).
  *
- * - Validates with the project JWT secret (env.SUPABASE_JWT_SECRET).
- * - Pins algorithms to HS256 — defends against alg-confusion attacks where
- *   an attacker tries to swap RS256 for HS256 with the public key.
- * - Validates issuer matches the project's auth endpoint.
- * - Validates audience is 'authenticated' (Supabase user access tokens).
+ * The frontend authenticates with Auth0 and sends the resulting access token
+ * as `Authorization: Bearer <jwt>`. We verify it against the tenant's public
+ * signing keys (JWKS), with:
+ * - algorithms pinned to RS256 (Auth0 signs access tokens with RS256) — guards
+ *   against alg-confusion downgrades.
+ * - issuer pinned to the tenant URL (token `iss`).
+ * - audience pinned to the API identifier the token was minted for.
  * - 5-second clock tolerance for benign drift.
- * - Returns a generic 401 to the client on any failure — the actual reason
- *   is logged server-side, never leaked.
+ * - a generic 401 to the client on any failure — the real reason is logged
+ *   server-side, never leaked.
+ *
+ * The remote key set is cached by `jose` (with rotation/cooldown handling), so
+ * this does not fetch JWKS on every request.
  */
-import jwt, { type VerifyErrors } from 'jsonwebtoken';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { RequestHandler } from 'express';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { unauthorized } from '../errors/HttpError.js';
 
-const issuer = `${env.SUPABASE_URL.replace(/\/+$/, '')}/auth/v1`;
+// Normalize to a trailing slash so it matches Auth0's `iss` exactly, and build
+// the standard JWKS endpoint from it.
+const issuer = env.AUTH0_ISSUER_BASE_URL.endsWith('/')
+  ? env.AUTH0_ISSUER_BASE_URL
+  : `${env.AUTH0_ISSUER_BASE_URL}/`;
+const JWKS = createRemoteJWKSet(new URL(`${issuer}.well-known/jwks.json`));
 
 export const requireAuth: RequestHandler = (req, _res, next) => {
   const header = req.headers.authorization;
@@ -26,28 +36,26 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
   const token = header.slice('Bearer '.length).trim();
   if (!token) return next(unauthorized('missing_token', 'Unauthorized'));
 
-  jwt.verify(
-    token,
-    env.SUPABASE_JWT_SECRET,
-    {
-      algorithms: ['HS256'],
-      issuer,
-      // Supabase user access tokens carry aud='authenticated'. Pinning it
-      // rejects any other token type signed with the same project secret.
-      audience: 'authenticated',
-      clockTolerance: 5,
-    },
-    (err: VerifyErrors | null, decoded) => {
-      if (err || !decoded || typeof decoded === 'string') {
-        // Log the precise reason; respond generically.
-        logger.warn(
-          { reqId: req.id, reason: err?.name ?? 'invalid' },
-          '[auth] token verification failed',
-        );
-        return next(unauthorized('invalid_token', 'Unauthorized'));
-      }
-      req.auth = decoded as Express.Request['auth'];
+  jwtVerify(token, JWKS, {
+    algorithms: ['RS256'],
+    issuer,
+    audience: env.AUTH0_AUDIENCE,
+    clockTolerance: 5,
+  })
+    .then(({ payload }) => {
+      req.auth = payload as Express.Request['auth'];
       next();
-    },
-  );
+    })
+    .catch((err: unknown) => {
+      // Log the precise reason; respond generically.
+      const reason =
+        (err as { code?: string; name?: string })?.code ??
+        (err as { name?: string })?.name ??
+        'invalid';
+      logger.warn(
+        { reqId: req.id, reason },
+        '[auth] token verification failed',
+      );
+      next(unauthorized('invalid_token', 'Unauthorized'));
+    });
 };
